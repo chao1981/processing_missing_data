@@ -1,4 +1,6 @@
-
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal as mvn
 def em_gmm(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
 
@@ -6,12 +8,9 @@ def em_gmm(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
     k = len(pis)
 
     ll_old = 0
-    for _ in range(max_iter):
-        exp_A = []
-        exp_B = []
-        ll_new = 0
-
+    for idx in range(1,max_iter):
         # E-step
+        print("第%d次EM算法迭代" %idx)
         ws = np.zeros((k, n))
         for j in range(k):
             for i in range(n):
@@ -53,11 +52,27 @@ def em_gmm(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
 
     return ws, pis, mus, sigmas
 
-def init_weights(df):
-    pass
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+def init_weights(data, k):
+    #return mus, sigmas, pis
+    m = np.mean(data, axis=0)
+    v = np.var(data, axis=0)
+    mus = np.stack((m,m,m,m,m), axis=0)
+    sigmas = np.stack((v,v,v,v,v), axis=0)
+
+    k = 5  # number of ditributions
+    _shape = (k, data.shape[1])  # (#of distri, #of feats)
+    mus = mus + np.random.random(_shape) * 10 - 20
+    sigmas  = sigmas + np.random.random(_shape)  * 10 - 20
+
+
+    pis = np.random.random(k)
+    pis = pis / np.sum(pis)
+
+    return mus, sigmas, pis
+
+
+
+
 
 df = pd.read_excel("totalNPdata.xlsx",  header=None)
 idx_gmm = list(range(2,6))
@@ -66,11 +81,12 @@ df_gmm.shape
 
 #Initial the parameters
 n = 218
-_shape = (5, df_gmm.shape[1])
-_mus = np.random.random(_shape)
-_sigmas = np.random.random(_shape)
-_pis = np.random.random(_shape[0])
-_pis = _pis / np.sum(_pis)
+k = 5#number of ditributions
+_shape = (k, df_gmm.shape[1])#(#of distri, #of feats)
 xs = np.array(df_gmm)
-
+# _mus = np.random.random(_shape)
+# _sigmas = np.random.random(_shape)
+# _pis = np.random.random(_shape[0])
+# _pis = _pis / np.sum(_pis)
+_mus, _sigmas, _pis = init_weights(xs, k)
 ws, pis, mus, sigmas = em_gmm(np.array(df_gmm), _pis, _mus, _sigmas, tol=0.01, max_iter=100)
